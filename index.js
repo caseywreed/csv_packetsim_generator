@@ -1,14 +1,27 @@
 'use strict';
 
 const request = require('request-promise')
+const json2csv = require('json2csv')
+const fs = require('fs')
 
 let token = null
-const danilo = '208011402656696'
-const matteo = '208011402656945'
+let ein = process.argv[2]
 
-let packetCache = []
+let parsedCache = []
+const fields = [
+    'powerInputVoltage',
+    'internalBatteryVoltage',
+    'heading',
+    'altitud',
+    'originLat',
+    'originLong',
+    'originHdop',
+    'originNumOfSats',
+    'ein',
+    'originTimestamp',
+    'datapt']
 
-function getByEIN(ein) {
+function getByEINRequest(ein) {
     const options = {
         url: 'https://packetsim-backend-production.splitsecnd.com/packetlogs?pageSize=25&pageNumber=1&startDate=1513200000000&endDate=1513317600000&ein=' + ein,
         method: 'GET',
@@ -32,7 +45,12 @@ function getByEIN(ein) {
     });
 }
 
-function getLoginToken() {
+async function getByEIN(ein) {
+    const data = await getByEINRequest(ein)
+    return data
+}
+
+function getLoginTokenRequest() {
     const options = {
         method: 'POST',
         uri: 'https://packetsim-backend-production.splitsecnd.com/login',
@@ -56,7 +74,12 @@ function getLoginToken() {
     });
 }
 
-function parsePacket(hex) {
+async function getLoginToken() {
+    const data = await getLoginTokenRequest()
+    return data.token
+}
+
+function parsePacketRequest(hex) {
     const options = {
         url: 'https://packetsim-backend-production.splitsecnd.com/parsePacket',
         method: 'POST',
@@ -83,34 +106,36 @@ function parsePacket(hex) {
     });
 }
 
-function parsePacketsInCache() {
-    packetCache.map(function(hex) {
-        parsePacket(hex)
-        .then(function(parseData) {
-            console.log(parseData)
-        })
+async function parsePacket(hex) {
+    const data = await parsePacketRequest(hex)
+    return data
+}
+
+// function writeParsedDataToCSV() {
+//     console.log(parsedCache)
+//     var csv = json2csv({ data: parsedCache });
+//     fs.writeFile(`${ein}_packetData.csv`, csv, function(err) {
+//         if (err) throw err;
+//         console.log('file saved');
+//     });
+// }
+
+
+async function main () {
+    console.log('Running...')
+    console.log('Fetching data for: ' + ein)
+    token = await getLoginToken()
+    console.log('Logged in...')
+    const einData = await getByEIN(ein)
+    await Promise.all(einData.data.map(async (packet) => {
+        const data = await parsePacket(packet.hex)
+        parsedCache.push(data)
+    }))
+    const csv = json2csv({ data: parsedCache, fields: fields })
+    fs.writeFile('file.csv', csv, function(err) {
+      if (err) throw err;
+      console.log('file saved');
     })
 }
 
-getLoginToken()
-    .then(function (data) {
-    console.log('started')
-        token = data.token
-        Promise.all([
-            getByEIN(matteo),
-            getByEIN(danilo),
-          ])
-            .then(function ([matteoData, daniloData]) {
-                daniloData.data.map(function(packet) {
-                    packetCache.push(packet.hex)
-                })
-                matteoData.data.map(function(packet) {
-                    packetCache.push(packet.hex)
-                })
-                parsePacketsInCache()
-            })
-    })
-    .catch(function (err) {
-        // POST failed...
-});
-
+main()
