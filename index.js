@@ -6,6 +6,9 @@ const fs = require('fs')
 
 let token = null
 let ein = process.argv[2]
+let today = new Date()
+let day = 86400000 //number of milliseconds in a day
+let yesterday = new Date(today - (1 * day))
 
 let parsedCache = []
 const fields = [
@@ -19,11 +22,12 @@ const fields = [
     'originNumOfSats',
     'ein',
     'originTimestamp',
-    'datapt']
+    'datapt'
+]
 
-function getByEINRequest(ein) {
+async function getByEIN(ein) {
     const options = {
-        url: 'https://packetsim-backend-production.splitsecnd.com/packetlogs?pageSize=25&pageNumber=1&startDate=1513200000000&endDate=1513317600000&ein=' + ein,
+        url: `https://packetsim-backend-production.splitsecnd.com/packetlogs?pageSize=25&pageNumber=1&startDate=${Date.parse(yesterday)}&endDate=${Date.parse(today)}&ein=${ein}`,
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -45,12 +49,7 @@ function getByEINRequest(ein) {
     });
 }
 
-async function getByEIN(ein) {
-    const data = await getByEINRequest(ein)
-    return data
-}
-
-function getLoginTokenRequest() {
+async function getLoginToken() {
     const options = {
         method: 'POST',
         uri: 'https://packetsim-backend-production.splitsecnd.com/login',
@@ -66,7 +65,7 @@ function getLoginTokenRequest() {
             if (error) return reject(error);
             try {
                 // JSON.parse() can throw an exception if not valid JSON
-                resolve(body);
+                resolve(body.token);
             } catch (e) {
                 reject(e);
             }
@@ -74,12 +73,7 @@ function getLoginTokenRequest() {
     });
 }
 
-async function getLoginToken() {
-    const data = await getLoginTokenRequest()
-    return data.token
-}
-
-function parsePacketRequest(hex) {
+async function parsePacket(hex) {
     const options = {
         url: 'https://packetsim-backend-production.splitsecnd.com/parsePacket',
         method: 'POST',
@@ -106,22 +100,14 @@ function parsePacketRequest(hex) {
     });
 }
 
-async function parsePacket(hex) {
-    const data = await parsePacketRequest(hex)
-    return data
+function writeCSVtoFile(csv) {
+    fs.writeFile(`${ein}_data.csv`, csv, function (err) {
+        if (err) throw err;
+        console.log(`${ein}_data.csv saved`);
+    })
 }
 
-// function writeParsedDataToCSV() {
-//     console.log(parsedCache)
-//     var csv = json2csv({ data: parsedCache });
-//     fs.writeFile(`${ein}_packetData.csv`, csv, function(err) {
-//         if (err) throw err;
-//         console.log('file saved');
-//     });
-// }
-
-
-async function main () {
+async function main() {
     console.log('Running...')
     console.log('Fetching data for: ' + ein)
     token = await getLoginToken()
@@ -132,10 +118,7 @@ async function main () {
         parsedCache.push(data)
     }))
     const csv = json2csv({ data: parsedCache, fields: fields })
-    fs.writeFile('file.csv', csv, function(err) {
-      if (err) throw err;
-      console.log('file saved');
-    })
+    writeCSVtoFile(csv)
 }
 
 main()
