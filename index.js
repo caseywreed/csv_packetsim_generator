@@ -105,7 +105,7 @@ async function parsePacket(hex) {
 }
 
 function writeCSVtoFile(csv) {
-    fs.writeFile(`${ein}_data.csv`, csv, function (err) {
+    fs.writeFile(`csv_output/${ein}_data.csv`, csv, function (err) {
         if (err) throw err;
         console.log(`${ein}_data.csv saved`);
     })
