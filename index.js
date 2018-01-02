@@ -8,7 +8,7 @@ let token = null
 let ein = process.argv[2]
 let today = new Date()
 let day = 86400000 //number of milliseconds in a day
-let yesterday = new Date(today - (1 * day))
+let yesterday = new Date(today - (7 * day))
 
 let parsedCache = []
 const fields = [
@@ -22,6 +22,7 @@ const fields = [
     'originNumOfSats',
     'ein',
     'originTimestamp',
+    'dataPtCount',
     'datapt'
 ]
 
@@ -117,7 +118,8 @@ async function main() {
         const data = await parsePacket(packet.hex)
         parsedCache.push(data)
     }))
-    const csv = json2csv({ data: parsedCache, fields: fields })
+    console.log(parsedCache)
+    const csv = json2csv({ data: parsedCache, fields: fields, unwindPath: 'dataPt' })
     writeCSVtoFile(csv)
 }
 
