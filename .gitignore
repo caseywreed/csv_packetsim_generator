@@ -59,3 +59,5 @@ typings/
 
 # Script Output
 *.csv
+
+.DS_Store

@@ -2,6 +2,7 @@
 
 const request = require('request-promise')
 const json2csv = require('json2csv')
+const flatten = require('lodash/flatten');
 const fs = require('fs')
 
 let token = null
@@ -23,7 +24,9 @@ const fields = [
     'ein',
     'originTimestamp',
     'dataPtCount',
-    'datapt'
+    'datapt',
+    'latitude',
+    'longitude'
 ]
 
 async function getByEIN(ein) {
@@ -117,9 +120,18 @@ async function main() {
     await Promise.all(einData.data.map(async (packet) => {
         const data = await parsePacket(packet.hex)
         parsedCache.push(data)
+        if (data.dataPt !== undefined) {
+            data.dataPt.map((pt) => {
+                let newDataPt = {
+                    latitude: pt.deltaLatitude + data.originLat,
+                    longitude: pt.deltaLongitude + data.originLong
+                }
+                parsedCache.push(newDataPt)
+            })
+        }
     }))
-    console.log(parsedCache)
-    const csv = json2csv({ data: parsedCache, fields: fields, unwindPath: 'dataPt' })
+    
+    const csv = json2csv({ data: parsedCache, fields: fields })
     writeCSVtoFile(csv)
 }
 
