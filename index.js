@@ -123,8 +123,8 @@ async function main() {
         if (data.dataPt !== undefined) {
             data.dataPt.map((pt) => {
                 let newDataPt = {
-                    latitude: pt.deltaLatitude + data.originLat,
-                    longitude: pt.deltaLongitude + data.originLong
+                    latitude: (pt.deltaLatitude / 100000) + data.originLat,
+                    longitude: (pt.deltaLongitude / 100000) + data.originLong
                 }
                 parsedCache.push(newDataPt)
             })
