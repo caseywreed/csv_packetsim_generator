@@ -5,10 +5,11 @@ const json2csv = require('json2csv')
 const fs = require('fs')
 
 let token = null
-let ein = process.argv[2]
+let ein = process.argv[2].toString()
+let daysToGoBack = process.argv[3].toString()
 let today = new Date()
 let day = 86400000 //number of milliseconds in a day
-let yesterday = new Date(today - (3 * day))
+let yesterday = new Date(today - (daysToGoBack * day))
 
 let parsedCache = []
 const fields = [
