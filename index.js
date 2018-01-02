@@ -9,7 +9,7 @@ let ein = process.argv[2].toString()
 let daysToGoBack = process.argv[3].toString()
 let today = new Date()
 let day = 86400000 //number of milliseconds in a day
-let yesterday = new Date(today - (daysToGoBack * day))
+let startDate = new Date(today - (daysToGoBack * day))
 
 let parsedCache = []
 const fields = [
@@ -31,7 +31,7 @@ const fields = [
 
 async function getByEIN(ein) {
     const options = {
-        url: `https://packetsim-backend-production.splitsecnd.com/packetlogs?pageSize=25&pageNumber=1&startDate=${Date.parse(yesterday)}&endDate=${Date.parse(today)}&ein=${ein}`,
+        url: `https://packetsim-backend-production.splitsecnd.com/packetlogs?pageSize=25&pageNumber=1&startDate=${Date.parse(startDate)}&endDate=${Date.parse(today)}&ein=${ein}`,
         method: 'GET',
         headers: {
             'Accept': 'application/json',
