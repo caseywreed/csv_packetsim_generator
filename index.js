@@ -114,24 +114,32 @@ function writeCSVtoFile(csv) {
 async function main() {
     console.log('Running...')
     console.log('Fetching data for: ' + ein)
+    // Get the auth token for the splitsecnd server
     token = await getLoginToken()
     console.log('Logged in...')
+    // Fetch the raw data by EIN
     const einData = await getByEIN(ein)
+    // For each packet, parse it..
     await Promise.all(einData.data.map(async (packet) => {
         const data = await parsePacket(packet.hex)
+        // Push it to a cache for later use
         parsedCache.push(data)
+        // If dataPts exist on the packet...
         if (data.dataPt !== undefined) {
             data.dataPt.map((pt) => {
+                // Format dataPts into new pts with calc'd lat and long
                 let newDataPt = {
                     latitude: (pt.deltaLatitude / 100000) + data.originLat,
                     longitude: (pt.deltaLongitude / 100000) + data.originLong
                 }
+                // And push those into the cache too, in order
                 parsedCache.push(newDataPt)
             })
         }
     }))
-    
+    // Make everything a CSV
     const csv = json2csv({ data: parsedCache, fields: fields })
+    // Send the CSV to be written to the file system
     writeCSVtoFile(csv)
 }
 

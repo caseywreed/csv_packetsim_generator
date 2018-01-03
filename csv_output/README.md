@@ -1,1 +1,1 @@
-# Generated CSVs get outputted here
+# Generated CSVs are output here
